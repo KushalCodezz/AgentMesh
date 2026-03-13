@@ -1,10 +1,23 @@
 <div align="center">
 
-# 🏢 AI Office
+<!-- ═══════════════════════════════════════════════════════════
+     ▶  INTERACTIVE 3D PLATFORM OVERVIEW
+     Open docs/intro.html in your browser for the live demo
+     ═══════════════════════════════════════════════════════════ -->
+
+<a href="https://github.com/KushalCodezz/AgentMesh/blob/main/docs/intro.html">
+  <img src="https://img.shields.io/badge/🏢_Interactive_3D_Demo-Open_Platform_Overview-6366f1?style=for-the-badge&labelColor=0d0d1a" alt="Interactive 3D Demo"/>
+</a>
+
+<br/><br/>
+
+# AgentMesh
 
 ### Multi-Agent Orchestration Platform
 
 **Research · Architecture · Engineering · QA · Creative — all in one autonomous loop**
+
+<br/>
 
 [![Tests](https://img.shields.io/badge/tests-29_passing-10b981?style=flat-square)](./orchestrator/tests)
 [![Python](https://img.shields.io/badge/python-3.12-3b82f6?style=flat-square&logo=python&logoColor=white)](https://python.org)
