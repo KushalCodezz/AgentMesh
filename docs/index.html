@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentMesh — Multi-Agent Orchestration Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --purple:#6366f1;
+  --purple-light:#818cf8;
+  --teal:#22d3ee;
+  --green:#10b981;
+  --amber:#f59e0b;
+  --pink:#f472b6;
+  --orange:#fb923c;
+  --bg:#04040a;
+  --bg2:#0a0a14;
+  --bg3:#0f0f1e;
+  --border:rgba(99,102,241,0.15);
+  --text:rgba(255,255,255,0.88);
+  --muted:rgba(255,255,255,0.45);
+  --dim:rgba(255,255,255,0.2);
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  overflow-x:hidden;
+  min-height:100vh;
+}
+
+/* ── CANVAS ── */
+#c{display:block;width:100%;height:100vh;position:fixed;top:0;left:0;z-index:0}
+
+/* ── OVERLAY LAYOUT ── */
+#overlay{
+  position:relative;z-index:10;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  pointer-events:none;
+}
+
+/* ── TOP HEADER ── */
+#header{
+  padding:28px 36px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  pointer-events:all;
+  background:linear-gradient(to bottom, rgba(4,4,10,0.9) 0%, transparent 100%);
+}
+
+.logo{
+  display:flex;align-items:center;gap:12px;
+  font-family:'Space Grotesk',sans-serif;
+  font-size:18px;font-weight:700;
+  letter-spacing:-0.3px;
+}
+.logo-icon{
+  width:36px;height:36px;border-radius:8px;
+  background:linear-gradient(135deg,#6366f1,#818cf8);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  box-shadow:0 0 20px rgba(99,102,241,0.4);
+}
+.logo-text{color:#fff}
+.logo-version{
+  font-size:11px;font-weight:500;
+  background:rgba(99,102,241,0.15);
+  border:1px solid rgba(99,102,241,0.3);
+  color:var(--purple-light);
+  padding:2px 8px;border-radius:20px;
+  font-family:'JetBrains Mono',monospace;
+}
+
+.nav-links{
+  display:flex;align-items:center;gap:8px;
+}
+.nav-btn{
+  font-family:'Inter',sans-serif;
+  font-size:12px;font-weight:500;
+  padding:6px 14px;border-radius:6px;
+  cursor:pointer;transition:all 0.2s;
+  text-decoration:none;
+  border:none;
+  display:flex;align-items:center;gap:6px;
+}
+.nav-btn.ghost{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  color:var(--muted);
+}
+.nav-btn.ghost:hover{
+  background:rgba(255,255,255,0.1);
+  color:var(--text);
+  border-color:rgba(255,255,255,0.2);
+}
+.nav-btn.primary{
+  background:var(--purple);
+  color:#fff;
+  box-shadow:0 0 20px rgba(99,102,241,0.35);
+}
+.nav-btn.primary:hover{
+  background:#7578f5;
+  box-shadow:0 0 28px rgba(99,102,241,0.5);
+  transform:translateY(-1px);
+}
+
+/* ── HERO CENTER ── */
+#hero{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:60px 24px 0;
+  pointer-events:none;
+}
+
+.badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;font-weight:500;
+  color:var(--purple-light);
+  background:rgba(99,102,241,0.08);
+  border:1px solid rgba(99,102,241,0.2);
+  padding:5px 14px;border-radius:20px;
+  margin-bottom:24px;
+  letter-spacing:0.5px;
+}
+.badge-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--purple-light);
+  animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+.hero-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:clamp(42px,7vw,80px);
+  font-weight:700;
+  line-height:1.05;
+  letter-spacing:-2px;
+  margin-bottom:20px;
+  background:linear-gradient(135deg, #fff 0%, #c4c6ff 40%, #818cf8 70%, #6366f1 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  text-shadow:none;
+}
+
+.hero-sub{
+  font-family:'Inter',sans-serif;
+  font-size:clamp(15px,2vw,19px);
+  font-weight:400;
+  color:var(--muted);
+  max-width:560px;
+  line-height:1.65;
+  margin-bottom:36px;
+}
+.hero-sub strong{
+  color:rgba(255,255,255,0.75);
+  font-weight:500;
+}
+
+/* ── STATS ROW ── */
+#stats{
+  display:flex;align-items:center;gap:0;
+  pointer-events:all;
+  margin-bottom:40px;
+  background:rgba(10,10,20,0.6);
+  border:1px solid rgba(99,102,241,0.15);
+  border-radius:12px;
+  overflow:hidden;
+  backdrop-filter:blur(12px);
+}
+.stat{
+  padding:12px 24px;
+  display:flex;flex-direction:column;align-items:center;
+  gap:3px;
+  border-right:1px solid rgba(99,102,241,0.1);
+}
+.stat:last-child{border-right:none}
+.stat-num{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:22px;font-weight:700;
+  color:#fff;
+  line-height:1;
+}
+.stat-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;font-weight:500;
+  color:var(--dim);
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.stat-num.c-purple{color:var(--purple-light)}
+.stat-num.c-teal{color:var(--teal)}
+.stat-num.c-green{color:var(--green)}
+.stat-num.c-amber{color:var(--amber)}
+
+/* ── KEYBOARD HINT ── */
+#hint-bar{
+  display:flex;align-items:center;justify-content:center;gap:16px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:var(--dim);
+  pointer-events:none;
+  margin-bottom:24px;
+}
+kbd{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:4px;
+  padding:2px 6px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:rgba(255,255,255,0.5);
+}
+.hint-item{display:flex;align-items:center;gap:5px}
+
+/* ── BOTTOM STRIP ── */
+#bottom{
+  padding:20px 36px;
+  display:flex;align-items:center;justify-content:space-between;
+  pointer-events:all;
+  background:linear-gradient(to top, rgba(4,4,10,0.95) 0%, transparent 100%);
+}
+
+.legend{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.legend-item{
+  display:flex;align-items:center;gap:5px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:var(--dim);
+}
+.legend-dot{
+  width:7px;height:7px;border-radius:50%;
+  flex-shrink:0;
+}
+
+/* ── ACTIVITY FEED ── */
+#feed{
+  display:flex;flex-direction:column;gap:4px;
+  max-width:240px;
+}
+.feed-item{
+  display:flex;align-items:center;gap:8px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  color:var(--dim);
+  animation:fadeIn 0.4s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+.feed-dot{
+  width:5px;height:5px;border-radius:50%;
+  flex-shrink:0;
+}
+
+/* ── NODE INFO PANEL ── */
+#node-panel{
+  position:fixed;
+  right:32px;
+  top:50%;
+  transform:translateY(-50%) translateX(calc(100% + 40px));
+  width:280px;
+  background:rgba(8,8,20,0.95);
+  border:1px solid rgba(99,102,241,0.25);
+  border-radius:14px;
+  padding:20px;
+  backdrop-filter:blur(20px);
+  transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  z-index:100;
+  pointer-events:all;
+}
+#node-panel.visible{
+  transform:translateY(-50%) translateX(0);
+}
+.panel-close{
+  position:absolute;top:12px;right:14px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:5px;
+  color:var(--muted);
+  font-size:12px;
+  padding:2px 7px;
+  cursor:pointer;
+  font-family:'Inter',sans-serif;
+  transition:all 0.2s;
+}
+.panel-close:hover{background:rgba(255,255,255,0.1);color:#fff}
+.panel-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;
+  margin-bottom:12px;
+}
+.panel-name{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:20px;font-weight:700;
+  color:#fff;margin-bottom:8px;
+  line-height:1.2;
+}
+.panel-desc{
+  font-family:'Inter',sans-serif;
+  font-size:13px;color:var(--muted);
+  line-height:1.6;margin-bottom:16px;
+}
+.panel-meta{
+  display:flex;flex-direction:column;gap:6px;
+  border-top:1px solid rgba(255,255,255,0.06);
+  padding-top:12px;
+}
+.meta-row{
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+}
+.meta-key{color:var(--dim)}
+.meta-val{
+  color:rgba(255,255,255,0.7);
+  background:rgba(255,255,255,0.05);
+  padding:2px 7px;border-radius:4px;
+}
+.panel-ask{
+  margin-top:14px;
+  width:100%;
+  font-family:'Inter',sans-serif;
+  font-size:12px;font-weight:500;
+  padding:8px 14px;
+  border-radius:7px;
+  background:rgba(99,102,241,0.15);
+  border:1px solid rgba(99,102,241,0.3);
+  color:var(--purple-light);
+  cursor:pointer;
+  transition:all 0.2s;
+  text-align:center;
+  display:block;
+}
+.panel-ask:hover{
+  background:rgba(99,102,241,0.25);
+  color:#fff;
+}
+
+/* ── TOOLTIP ── */
+#tooltip{
+  position:fixed;
+  display:none;
+  background:rgba(8,8,20,0.95);
+  border:1px solid rgba(99,102,241,0.3);
+  border-radius:8px;
+  padding:10px 14px;
+  font-family:'Inter',sans-serif;
+  font-size:12px;
+  color:#fff;
+  pointer-events:none;
+  max-width:200px;
+  backdrop-filter:blur(12px);
+  z-index:200;
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+}
+#tooltip .tt-name{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:14px;font-weight:600;
+  color:var(--purple-light);margin-bottom:4px;
+}
+#tooltip .tt-desc{
+  color:var(--muted);
+  line-height:1.5;font-size:11px;
+}
+
+/* ── LEGEND / INFO BAR ── */
+#info-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:var(--dim);
+  display:flex;align-items:center;gap:8px;
+}
+
+/* ── PAUSE OVERLAY ── */
+#pause-badge{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:14px;font-weight:600;
+  color:rgba(255,255,255,0.5);
+  background:rgba(8,8,20,0.7);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:8px;
+  padding:10px 20px;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.3s;
+  z-index:300;
+}
+#pause-badge.visible{opacity:1}
+
+/* ── SCAN LINE (subtle CRT aesthetic) ── */
+#scan{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.04) 2px,
+    rgba(0,0,0,0.04) 4px
+  );
+  pointer-events:none;z-index:5;
+}
+
+@media(max-width:640px){
+  #header{padding:16px 20px}
+  #hero{padding:40px 16px 0}
+  .hero-title{font-size:36px;letter-spacing:-1px}
+  #stats{flex-wrap:wrap}
+  .stat{padding:10px 16px}
+  #bottom{flex-direction:column;gap:16px;align-items:flex-start;padding:16px 20px}
+  #node-panel{right:12px;width:calc(100vw - 24px)}
+  .nav-links .nav-btn.ghost{display:none}
+}
+</style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+<div id="scan"></div>
+<div id="pause-badge">⏸ PAUSED — press Space to resume</div>
+
+<!-- NODE INFO PANEL -->
+<div id="node-panel">
+  <button class="panel-close" onclick="closePanel()">✕ close</button>
+  <div class="panel-tag" id="panel-tag"></div>
+  <div class="panel-name" id="panel-name"></div>
+  <div class="panel-desc" id="panel-desc"></div>
+  <div class="panel-meta" id="panel-meta"></div>
+  <button class="panel-ask" id="panel-ask" onclick="askAboutNode()">→ learn more about this agent</button>
+</div>
+
+<!-- TOOLTIP -->
+<div id="tooltip">
+  <div class="tt-name" id="tt-name"></div>
+  <div class="tt-desc" id="tt-desc"></div>
+</div>
+
+<!-- MAIN OVERLAY -->
+<div id="overlay">
+
+  <!-- HEADER -->
+  <div id="header">
+    <div class="logo">
+      <div class="logo-icon">🏢</div>
+      <span class="logo-text">AgentMesh</span>
+      <span class="logo-version">v1.0.0</span>
+    </div>
+    <div class="nav-links">
+      <a class="nav-btn ghost" href="https://github.com/KushalCodezz/AgentMesh" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+        GitHub
+      </a>
+      <a class="nav-btn ghost" href="https://github.com/KushalCodezz/AgentMesh#api-reference" target="_blank">
+        API Docs
+      </a>
+      <a class="nav-btn primary" href="https://github.com/KushalCodezz/AgentMesh#-quick-start" target="_blank">
+        Quick Start →
+      </a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div id="hero">
+    <div class="badge">
+      <span class="badge-dot"></span>
+      MULTI-AGENT ORCHESTRATION
+    </div>
+
+    <h1 class="hero-title">AgentMesh</h1>
+
+    <p class="hero-sub">
+      A <strong>production-ready platform</strong> where specialist AI agents —
+      researcher, architect, engineer, QA, creative — collaborate autonomously
+      to deliver complete, verifiable outputs from a single prompt.
+    </p>
+
+    <!-- STATS -->
+    <div id="stats">
+      <div class="stat">
+        <span class="stat-num c-purple" id="s-agents">0</span>
+        <span class="stat-label">Agents</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num c-green" id="s-tests">0</span>
+        <span class="stat-label">Tests passing</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num c-teal" id="s-files">0</span>
+        <span class="stat-label">Source files</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num c-amber" id="s-lines">0</span>
+        <span class="stat-label">Lines of code</span>
+      </div>
+    </div>
+
+    <!-- KEYBOARD HINTS -->
+    <div id="hint-bar">
+      <div class="hint-item"><kbd>drag</kbd> rotate</div>
+      <div class="hint-item"><kbd>scroll</kbd> zoom</div>
+      <div class="hint-item"><kbd>click</kbd> node info</div>
+      <div class="hint-item"><kbd>Space</kbd> pause</div>
+      <div class="hint-item"><kbd>R</kbd> reset view</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div id="bottom">
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot" style="background:#6366f1"></span>Orchestrator</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#22d3ee"></span>Research</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span>Engineer</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#a78bfa"></span>QA</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#f472b6"></span>Creative</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Architect</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#fb923c"></span>Adaptive</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#64748b"></span>Storage</div>
+    </div>
+    <div id="feed"></div>
+  </div>
+
+</div>
+
+<!-- ─────── THREE.JS — ORIGINAL CODE UNTOUCHED ─────── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const canvas = document.getElementById('c');
+const W = window.innerWidth, H = window.innerHeight;
+canvas.width = W; canvas.height = H;
+
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setSize(W,H); renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setClearColor(0x04040a,1);
+
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(55,W/H,0.1,200);
+cam.position.set(0,6,18);
+
+// Lighting
+scene.add(new THREE.AmbientLight(0x6366f1, 0.4));
+const pl1 = new THREE.PointLight(0x6366f1, 2, 30); pl1.position.set(0,8,0); scene.add(pl1);
+const pl2 = new THREE.PointLight(0x22d3ee, 1.5, 20); pl2.position.set(-8,4,4); scene.add(pl2);
+const pl3 = new THREE.PointLight(0xf59e0b, 1.2, 20); pl3.position.set(8,4,-4); scene.add(pl3);
+
+// Grid floor
+const gridHelper = new THREE.GridHelper(40,40,0x1a1a3a,0x111128);
+gridHelper.position.y = -3; scene.add(gridHelper);
+
+// NODE DATA
+const nodes = [
+  {id:'orch',   label:'Orchestrator',     desc:'Central brain. Plans tasks, routes agents, runs debate engine, packages deliverables.',  color:0x6366f1, pos:[0,3,0],    r:1.1, emissive:0x3333aa, model:'Internal',    cap:'planning · routing · debate',   latency:'12ms'},
+  {id:'pm',     label:'ProductManager',   desc:'Market research, PRD generation, competitor analysis. Backed by Claude Opus.',           color:0x22d3ee, pos:[-6,0,-3],   r:0.75, model:'Claude Opus',  cap:'research · planning · analysis',latency:'2.4s'},
+  {id:'arch',   label:'ArchitectAgent',   desc:'System design, API contracts, data modeling, cost estimates.',                           color:0xf59e0b, pos:[-3,0,5],    r:0.75, model:'Claude Opus',  cap:'architecture · design',         latency:'3.1s'},
+  {id:'eng',    label:'EngineerAgent',    desc:'Code generation, tests, Dockerfile. Syntax validation + object store upload.',           color:0x10b981, pos:[3,0,5],     r:0.75, model:'Claude Opus',  cap:'code · testing · build',        latency:'4.8s'},
+  {id:'qa',     label:'QAAgent',          desc:'Code review, fact-checking, security analysis, test validation.',                        color:0xa78bfa, pos:[6,0,-3],    r:0.75, model:'Claude Sonnet',cap:'qa · security · review',        latency:'1.9s'},
+  {id:'cre',    label:'CreativeAgent',    desc:'Image prompts, storyboards, marketing copy, video briefs.',                              color:0xf472b6, pos:[0,0,-7],    r:0.75, model:'Gemini / Sonnet',cap:'creative · media · copy',      latency:'2.2s'},
+  {id:'ada',    label:'AdaptiveLayer',    desc:'Gap detection. Proposes new agents when failures exceed threshold.',                     color:0xfb923c, pos:[0,-2.5,0],  r:0.6,  model:'Claude Sonnet',cap:'adaptive · monitoring',         latency:'8ms'},
+  {id:'debate', label:'DebateEngine',     desc:'PROPOSE → CRITIQUE → RESPOND. Weighted confidence aggregation.',                        color:0x818cf8, pos:[0,1.5,-3],  r:0.55, model:'Claude Sonnet',cap:'debate · aggregation',          latency:'5ms'},
+  {id:'chroma', label:'ChromaDB',         desc:'Vector store. Shared agent memory, RAG retrieval, evidence linking.',                   color:0x64748b, pos:[-8,0,3],    r:0.5,  model:'Storage',      cap:'vectors · rag · memory',        latency:'<1ms'},
+  {id:'s3',     label:'Object Store',     desc:'S3/MinIO. Code bundles, media, artifacts with provenance metadata.',                    color:0x64748b, pos:[8,0,3],     r:0.5,  model:'Storage',      cap:'objects · artifacts · bundles', latency:'<1ms'},
+  {id:'pg',     label:'PostgreSQL',       desc:'Metadata DB. Task states, agent registry, reliability metrics, audit log.',             color:0x64748b, pos:[0,0,9],     r:0.5,  model:'Storage',      cap:'metadata · audit · metrics',    latency:'<1ms'},
+];
+
+// Edges
+const edges = [
+  ['orch','pm'],['orch','arch'],['orch','eng'],['orch','qa'],['orch','cre'],
+  ['orch','ada'],['orch','debate'],['orch','chroma'],['orch','s3'],['orch','pg'],
+  ['pm','chroma'],['eng','s3'],['qa','pg'],['arch','chroma'],
+  ['debate','qa'],['ada','orch'],
+];
+
+// Create node meshes
+const meshes = {};
+const mats = {};
+nodes.forEach(n=>{
+  const geo = new THREE.IcosahedronGeometry(n.r, n.r>0.9?3:2);
+  const mat = new THREE.MeshStandardMaterial({
+    color:n.color, emissive:n.emissive||n.color,
+    emissiveIntensity:0.25, roughness:0.3, metalness:0.6
+  });
+  const mesh = new THREE.Mesh(geo,mat);
+  mesh.position.set(...n.pos);
+  mesh.userData = n;
+  scene.add(mesh);
+  meshes[n.id]=mesh; mats[n.id]=mat;
+
+  // Glow ring
+  const rGeo = new THREE.TorusGeometry(n.r*1.35, 0.03, 8, 64);
+  const rMat = new THREE.MeshBasicMaterial({color:n.color,transparent:true,opacity:0.4});
+  const ring = new THREE.Mesh(rGeo,rMat);
+  ring.rotation.x = Math.PI/2;
+  mesh.add(ring);
+
+  // Orbit particles for orchestrator
+  if(n.id==='orch'){
+    for(let i=0;i<12;i++){
+      const pGeo=new THREE.SphereGeometry(0.06,6,6);
+      const pMat=new THREE.MeshBasicMaterial({color:0x818cf8,transparent:true,opacity:0.7});
+      const p=new THREE.Mesh(pGeo,pMat);
+      const angle=(i/12)*Math.PI*2;
+      p.position.set(Math.cos(angle)*1.8, 0, Math.sin(angle)*1.8);
+      p.userData={orbitAngle:angle, orbitR:1.8, speed:0.008+Math.random()*0.004};
+      mesh.add(p);
+    }
+  }
+});
+
+// Edge lines
+const lineMats = [];
+edges.forEach(([a,b])=>{
+  const pa = new THREE.Vector3(...nodes.find(n=>n.id===a).pos);
+  const pb = new THREE.Vector3(...nodes.find(n=>n.id===b).pos);
+  const geo = new THREE.BufferGeometry().setFromPoints([pa,pb]);
+  const mat = new THREE.LineBasicMaterial({
+    color:nodes.find(n=>n.id===a).color, transparent:true, opacity:0.25
+  });
+  scene.add(new THREE.Line(geo,mat));
+  lineMats.push({mat, from:a});
+});
+
+// Floating packet particles along edges
+const packets = [];
+edges.slice(0,8).forEach(([a,b],i)=>{
+  const pa = new THREE.Vector3(...nodes.find(n=>n.id===a).pos);
+  const pb = new THREE.Vector3(...nodes.find(n=>n.id===b).pos);
+  const geo = new THREE.SphereGeometry(0.08,6,6);
+  const mat = new THREE.MeshBasicMaterial({
+    color:nodes.find(n=>n.id===a).color, transparent:true, opacity:0.9
+  });
+  const mesh = new THREE.Mesh(geo,mat);
+  scene.add(mesh);
+  packets.push({mesh, pa, pb, t:(i/edges.length), speed:0.004+Math.random()*0.003, dir:1});
+});
+
+// Raycaster
+const ray = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+const tooltip = document.getElementById('tooltip');
+let hovered = null;
+
+canvas.addEventListener('mousemove', e=>{
+  mouse.x = (e.clientX/W)*2-1;
+  mouse.y = -(e.clientY/H)*2+1;
+  tooltip.style.left=(e.clientX+18)+'px';
+  tooltip.style.top=(e.clientY-14)+'px';
+});
+
+// Orbit controls (manual) — original
+let isDown=false, prevMouse={x:0,y:0}, rotX=0.2, rotY=0;
+let targetRotX=0.2, targetRotY=0;
+const defaultRotX=0.2, defaultRotY=0;
+
+canvas.addEventListener('mousedown',e=>{isDown=true;prevMouse={x:e.clientX,y:e.clientY}});
+canvas.addEventListener('mouseup',()=>isDown=false);
+canvas.addEventListener('mouseleave',()=>isDown=false);
+canvas.addEventListener('mousemove',e=>{
+  if(!isDown)return;
+  targetRotY+=(e.clientX-prevMouse.x)*0.008;
+  targetRotX+=(e.clientY-prevMouse.y)*0.008;
+  targetRotX=Math.max(-1.0,Math.min(1.0,targetRotX));
+  prevMouse={x:e.clientX,y:e.clientY};
+});
+let camDist=18;
+canvas.addEventListener('wheel',e=>{
+  camDist=Math.max(8,Math.min(30,camDist+e.deltaY*0.02));
+  e.preventDefault();
+},{passive:false});
+
+// Group for rotation
+const pivot = new THREE.Group(); scene.add(pivot);
+Object.values(meshes).forEach(m=>pivot.add(m));
+edges.forEach(([a,b])=>{
+  const pa=new THREE.Vector3(...nodes.find(n=>n.id===a).pos);
+  const pb=new THREE.Vector3(...nodes.find(n=>n.id===b).pos);
+  const geo=new THREE.BufferGeometry().setFromPoints([pa,pb]);
+  const mat=new THREE.LineBasicMaterial({color:nodes.find(n=>n.id===a).color,transparent:true,opacity:0.18});
+  const line=new THREE.Line(geo,mat); pivot.add(line);
+});
+packets.forEach(p=>pivot.add(p.mesh));
+
+let t=0, paused=false;
+function animate(){
+  requestAnimationFrame(animate);
+  if(paused) return;
+  t+=0.01;
+  rotX+=(targetRotX-rotX)*0.08;
+  rotY+=(targetRotY-rotY)*0.08;
+  pivot.rotation.x=rotX; pivot.rotation.y=rotY;
+  cam.position.set(Math.sin(rotY*0.1)*camDist*0.1, camDist*0.35, camDist);
+  cam.lookAt(0,1,0);
+
+  const orch=meshes['orch'];
+  orch.rotation.y+=0.008; orch.rotation.x+=0.004;
+  mats['orch'].emissiveIntensity=0.2+Math.sin(t*2)*0.15;
+
+  orch.children.forEach(c=>{
+    if(c.userData.orbitAngle!==undefined){
+      c.userData.orbitAngle+=c.userData.speed;
+      c.position.set(
+        Math.cos(c.userData.orbitAngle)*c.userData.orbitR,
+        Math.sin(c.userData.orbitAngle*0.7)*0.4,
+        Math.sin(c.userData.orbitAngle)*c.userData.orbitR
+      );
+    }
+  });
+
+  ['pm','arch','eng','qa','cre'].forEach((id,i)=>{
+    meshes[id].position.y=nodes.find(n=>n.id===id).pos[1]+Math.sin(t*0.8+i*1.2)*0.2;
+    meshes[id].rotation.y+=0.012;
+    mats[id].emissiveIntensity=0.1+Math.sin(t+i)*0.12;
+  });
+
+  mats['ada'].emissiveIntensity=0.15+Math.sin(t*3)*0.15;
+  mats['debate'].emissiveIntensity=0.15+Math.sin(t*2.5+1)*0.12;
+
+  packets.forEach(p=>{
+    p.t+=p.speed*p.dir;
+    if(p.t>1){p.t=1;p.dir=-1;}
+    if(p.t<0){p.t=0;p.dir=1;}
+    p.mesh.position.lerpVectors(p.pa,p.pb,p.t);
+    p.mesh.position.y+=Math.sin(p.t*Math.PI)*1.0;
+  });
+
+  // Raycast hover
+  ray.setFromCamera(mouse, cam);
+  const allMeshes=Object.values(meshes);
+  const hits=ray.intersectObjects(allMeshes);
+  if(hits.length>0){
+    const n=hits[0].object.userData;
+    if(n.label){
+      document.getElementById('tt-name').textContent=n.label;
+      document.getElementById('tt-desc').textContent=n.desc;
+      tooltip.style.display='block';
+      canvas.style.cursor='pointer';
+    }
+    if(hovered!==n.id){
+      if(hovered)mats[hovered].emissiveIntensity=0.2;
+      if(mats[n.id]) mats[n.id].emissiveIntensity=0.8;
+      hovered=n.id;
+    }
+  } else {
+    tooltip.style.display='none';
+    canvas.style.cursor='grab';
+    if(hovered){if(mats[hovered])mats[hovered].emissiveIntensity=0.2; hovered=null;}
+  }
+
+  pl1.intensity=1.5+Math.sin(t*1.5)*0.5;
+  renderer.render(scene,cam);
+}
+animate();
+
+// ── CLICK → OPEN NODE PANEL ──
+let activeNode = null;
+canvas.addEventListener('click', e=>{
+  ray.setFromCamera(mouse, cam);
+  const hits = ray.intersectObjects(Object.values(meshes));
+  if(hits.length>0){
+    const n = hits[0].object.userData;
+    if(n.label) openPanel(n);
+  }
+});
+
+function openPanel(n){
+  activeNode = n;
+  const colorMap = {
+    0x6366f1:'#6366f1',0x22d3ee:'#22d3ee',0x10b981:'#10b981',
+    0xa78bfa:'#a78bfa',0xf472b6:'#f472b6',0xf59e0b:'#f59e0b',
+    0xfb923c:'#fb923c',0x818cf8:'#818cf8',0x64748b:'#64748b'
+  };
+  const col = colorMap[n.color] || '#6366f1';
+
+  const tag = document.getElementById('panel-tag');
+  tag.textContent = n.id.toUpperCase();
+  tag.style.background = col+'22';
+  tag.style.border = '1px solid '+col+'44';
+  tag.style.color = col;
+
+  document.getElementById('panel-name').textContent = n.label;
+  document.getElementById('panel-desc').textContent = n.desc;
+
+  const meta = document.getElementById('panel-meta');
+  meta.innerHTML = `
+    <div class="meta-row"><span class="meta-key">model</span><span class="meta-val">${n.model||'—'}</span></div>
+    <div class="meta-row"><span class="meta-key">capabilities</span><span class="meta-val" style="font-size:9px">${n.cap||'—'}</span></div>
+    <div class="meta-row"><span class="meta-key">avg latency</span><span class="meta-val">${n.latency||'—'}</span></div>
+  `;
+  document.getElementById('node-panel').classList.add('visible');
+}
+
+function closePanel(){
+  document.getElementById('node-panel').classList.remove('visible');
+  activeNode = null;
+}
+
+function askAboutNode(){
+  if(!activeNode) return;
+  window.open(`https://github.com/KushalCodezz/AgentMesh#agents`, '_blank');
+}
+
+// ── KEYBOARD SHORTCUTS ──
+document.addEventListener('keydown', e=>{
+  if(e.code==='Space'){
+    e.preventDefault();
+    paused = !paused;
+    document.getElementById('pause-badge').classList.toggle('visible', paused);
+  }
+  if(e.code==='KeyR'){
+    targetRotX=defaultRotX; targetRotY=defaultRotY;
+    camDist=18;
+  }
+  if(e.code==='Escape') closePanel();
+});
+
+// ── ANIMATED STATS COUNTERS ──
+function animateCounter(id, target, duration=1200, prefix=''){
+  const el = document.getElementById(id);
+  let start = null;
+  function step(ts){
+    if(!start) start=ts;
+    const p = Math.min((ts-start)/duration,1);
+    const val = Math.round(p*target);
+    el.textContent = prefix + (val >= 1000 ? val.toLocaleString() : val);
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+setTimeout(()=>{
+  animateCounter('s-agents', 6);
+  animateCounter('s-tests',  29);
+  animateCounter('s-files',  55);
+  animateCounter('s-lines',  5775);
+}, 600);
+
+// ── LIVE ACTIVITY FEED ──
+const activities = [
+  {col:'#22d3ee', text:'ProductManager → market research complete'},
+  {col:'#f59e0b', text:'ArchitectAgent → system design v1 submitted'},
+  {col:'#10b981', text:'EngineerAgent → auth service generated'},
+  {col:'#a78bfa', text:'QAAgent → 14/14 checks passed'},
+  {col:'#818cf8', text:'DebateEngine → confidence 0.87 → accepted'},
+  {col:'#f472b6', text:'CreativeAgent → video brief ready'},
+  {col:'#fb923c', text:'AdaptiveLayer → no gaps detected'},
+  {col:'#6366f1', text:'Orchestrator → deliverable packaged ✓'},
+  {col:'#22d3ee', text:'ProductManager → competitor matrix done'},
+  {col:'#10b981', text:'EngineerAgent → Dockerfile generated'},
+];
+
+let feedIdx = 0;
+const feedEl = document.getElementById('feed');
+
+function addFeedItem(){
+  const a = activities[feedIdx % activities.length];
+  feedIdx++;
+  const div = document.createElement('div');
+  div.className = 'feed-item';
+  div.innerHTML = `<span class="feed-dot" style="background:${a.col}"></span><span>${a.text}</span>`;
+  feedEl.prepend(div);
+  while(feedEl.children.length > 4) feedEl.removeChild(feedEl.lastChild);
+}
+
+setInterval(addFeedItem, 2200);
+addFeedItem();
+
+// ── RESIZE ──
+window.addEventListener('resize', ()=>{
+  const W=window.innerWidth, H=window.innerHeight;
+  renderer.setSize(W,H);
+  cam.aspect=W/H; cam.updateProjectionMatrix();
+});
+</script>
+</body>
+</html>
